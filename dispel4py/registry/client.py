@@ -57,7 +57,7 @@ def removeCache():
         pass
     print 'Cleared login cache.'
         
-def _initRegistry(username=None, password=None):
+def _initRegistry(config, username=None, password=None):
     token = None
     if not username:
         try:
@@ -288,7 +288,7 @@ def main():
         removeCache()
     else:
         config = configure()
-        reg = _initRegistry(args.username, args.password)
+        reg = _initRegistry(config, args.username, args.password)
         try:
             globals()[args.command](reg, *args.args)
         except KeyError:
