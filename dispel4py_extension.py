@@ -41,6 +41,7 @@ def _listObjects(name):
 
 from IPython.core.magic import (Magics, magics_class, line_magic)
     
+@magics_class
 class Dispel4PyMagics(Magics):
     '''
     Creates the dispel4py command in iPython, to be used interactively for training and other purposes.
