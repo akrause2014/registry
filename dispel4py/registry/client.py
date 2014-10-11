@@ -136,7 +136,7 @@ def view(reg, name):
         sys.stdout.write(source)
         sys.stdout.write('\n')
         
-def list(reg, name):
+def list(reg, name=''):
     '''
     List the contents of the package with 'name'.
     '''
@@ -259,7 +259,7 @@ def configure():
             CONFIG = os.path.abspath(configName)
         else:
             # or in the user home directory
-            CONFIG = os.path.abspath('~/%s%s' % (DISPEL4PY_CONFIG_DIR, CONFIG_NAME))
+            CONFIG = os.path.abspath(DISPEL4PY_CONFIG_DIR + CONFIG_NAME)
     if not os.path.isfile(CONFIG):
         # create config
         conf = { 'verce.registry' : { 'url' : core.DEF_URL, 'workspace' : core.DEF_WORKSPACE } }

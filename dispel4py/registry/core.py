@@ -54,7 +54,7 @@ class VerceRegistry(object):
             else:
                 raise
         try:
-            self.token = response.json()['token']
+            self.token = response.json()['access_token']
             self.user = user
         except:
             raise NotAuthorisedException()
@@ -364,7 +364,7 @@ def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSP
     reg.user = username
     if token:
         reg.token = token
-        response = requests.get(url + 'workspaces', headers=getHeaders(token))
+        response = requests.get(url + 'workspace/%s' % workspace, headers=getHeaders(token))
         if response.status_code == requests.codes.forbidden:
             raise NotAuthorisedException()
         else:
