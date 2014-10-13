@@ -39,8 +39,13 @@ def login(username, password=None, conf=None):
     if conf is None:
         conf=configure()
     workspace = conf['verce.registry']['workspace']
+    url = None
+    if 'VERCEREGISTRY_HOST' in os.environ:
+        url = os.environ['VERCEREGISTRY_HOST'] + '/rest/'
+    else:
+        url = conf['verce.registry']['url']
     try:
-        reg = core.initRegistry(username, password, url=os.environ['VERCEREGISTRY_HOST'] + '/rest/', workspace=workspace)
+        reg = core.initRegistry(username, password, url=url, workspace=workspace)
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
@@ -122,10 +127,9 @@ def register(reg, name, attr, file=None):
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)        
 
-
-def workspace(reg):
-    ''' Choose a new default workspace '''
-    print 'Please select one of the following workspaces by providing the corresponding number. Enter 0 to exit.'
+def __select_wspc(reg):
+    ''' List all workspaces and allow the user to select one - return (workspace's id, name) '''
+    
     resp = None
     try:
         resp = reg.listWorkspaces()
@@ -155,9 +159,30 @@ def workspace(reg):
         sys.stderr.write('Invalid selection - out of bounds.\n')
         sys.exit(3)
     
-    wspc_id = resp.json()[choice-1]['id']
+    return (resp.json()[choice-1]['id'],resp.json()[choice-1]['name'])
+
+def clone_workspace(reg):
+    ''' Clone a workspace by choosing one of the existing ones '''
+    
+    print 'Please select a workspace to clone by providing the corresponding number. Enter 0 to exit.'
+    wspc_id, wspc_name = __select_wspc(reg)
+    
+    new_name = raw_input('Please provide a name for the new workspace: ')
+    try:
+        reg.clone(wspc_id, new_name)
+    except Exception as err:
+        sys.stderr.write("An error occurred:\n%s\n" % err)
+        sys.exit(-1)
+    
+    print 'New workspace created \'' + new_name + '\' as a clone of \'' + wspc_name + '\''
+
+def workspace(reg):
+    ''' Choose a new default workspace '''
+
+    print 'Please select one of the following workspaces by providing the corresponding number. Enter 0 to exit.'
+    wspc_id, wspc_name = __select_wspc(reg)
     set_default_workspace(wspc_id)
-    print 'Default workspace changed to \'' + resp.json()[choice-1]['name'] + '\'' 
+    print 'Default workspace changed to \'' + wspc_name + '\'' 
     
     
 def view(reg, name):
@@ -177,12 +202,47 @@ def view(reg, name):
     else:
         sys.stdout.write(source)
         sys.stdout.write('\n')
+
+def __lst_pckgs(reg):
+    '''List the packages of a workspace'''
+    packages = set([])
+    wspc_json = None
+    try:
+        wspc_json = reg.listPackages('')
+    except core.NotAuthorisedException:
+        sys.stderr.write("Not authorised.")
+        sys.exit(4)
+    except Exception as err:
+        print traceback.format_exc()
+        sys.stderr.write("An error occurred:\n%s\n" % err)
+        sys.exit(-1)
+    
+    for wi in wspc_json['workspaceItems']:
+        p = wi['pckg']
+        if not p.endswith('__gendef') and not p.endswith('__impl'):
+            packages.add(str(wi['pckg']))
+    # packs =  list(packages) -- this causes an error for whatever reason...
+    packs=[]
+    for i in packages:
+        packs.append(i)
+    packs.sort()
+    if len(packs)>0:
+        print 'Packages:'
+        print '\n'.join('   ' + p for p in packs)
+    else:
+        print 'No packages found.'
         
 def list(reg, name=''):
     '''
     List the contents of the package with 'name'.
     '''
+    
     print 'Listing of Workspace:' + str(reg.workspace)
+    # XXX: Refactor / special case for name=''
+    if name=='':
+        __lst_pckgs(reg)
+        return
+        
     try:
         pkgs = reg.listPackages(name)
     except core.UnknownPackageException as exc:

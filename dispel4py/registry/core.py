@@ -90,6 +90,20 @@ class VerceRegistry(object):
                 self.registered_entities[fullname] = code
                 return self
 
+    def clone(self, wspc_id, clone_name):
+        ''' Clone the given Workspace(wspc_id) into a new one named clone_name. '''
+        try:
+            url = self.registry_url + 'workspace/%s?cloneTo=%s' % (wspc_id, clone_name)
+            data = { 'workspace': { 'id': wspc_id } }
+            # print url
+            # print json.dumps(data)
+            response = requests.post(url, headers=getHeaders(self.token), data=json.dumps(data))
+            # print response.json()
+        except Exception as err:
+            print traceback.format_exc()
+            sys.stderr.write("An error occurred:\n%s\n" % err)
+            sys.exit(-1)
+
     def load_module(self, fullname):
         # print "load_module " + fullname
         if fullname in sys.modules:
@@ -317,6 +331,7 @@ class VerceRegistry(object):
         '''
         url = self.registry_url + "workspace/%s?packagesByPrefix=%s" % (self.workspace, pkg)
         response = requests.get(url, headers=getHeaders(self.token))
+        # print json.dumps(response.json(), sort_keys=True, indent=4)
         result = []
         if response.status_code == requests.codes.ok:
             result = response.json()
@@ -384,11 +399,11 @@ def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSP
     reg.user = username
     if token:
         reg.token = token
-        response = requests.get(url + 'workspace/%s' % workspace, headers=getHeaders(token))
-        if response.status_code == requests.codes.forbidden:
-            raise NotAuthorisedException()
-        else:
-            response.raise_for_status()
+        # response = requests.get(url + 'workspace/%s' % workspace, headers=getHeaders(token))
+        # if response.status_code == requests.codes.forbidden:
+        #     raise NotAuthorisedException()
+        # else:
+        #     response.raise_for_status()
     else:
         reg.login(username, password)
     sys.meta_path.append(reg)
