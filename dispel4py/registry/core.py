@@ -17,6 +17,7 @@ import sys
 import requests
 import traceback
 import json
+import os
 from dispel4py.registry import utils
 
 DEF_URL = 'http://escience8.inf.ed.ac.uk:8080/VerceRegistry/rest/'
@@ -27,7 +28,7 @@ AUTH_HEADER = 'X-Auth-Token'
 
 class VerceRegistry(object):
     '''
-    Dispel4Py's interface to the VERCE Registry. Dispel4Py could work without a registry or through 
+    Dispel4Py's interface to the VERCE Registry. Dispel4Py could work withut a registry or through 
     connecting to alternative registries of python and dispel4py components. In this instance this 
     makes use of the VERCE Registry's REST API.
     '''
@@ -38,10 +39,20 @@ class VerceRegistry(object):
     registered_entities = {}
     token = None
     
-    def __init__(self):
+    def __init__(self, wspc_id=DEF_WORKSPACE):
         # this imports the requests module before anything else
         # so we don't get a loop when importing
         requests.get('http://github.com')
+        # change the registry URL according to the environment var, if set
+        if 'VERCEREGISTRY_HOST' in os.environ:
+            self.registry_url = os.environ['VERCEREGISTRY_HOST']
+        
+        self.workspace = wspc_id
+        
+        # print 'Initialised VerceRegistry object for ' + self.registry_url
+        
+    def set_workspace(self, wspc_id):
+        self.workspace = wspc_id
     
     def login(self, user, password):
         url = self.registry_url + 'login?username=%s&password=%s' % (user, password)
@@ -337,6 +348,15 @@ class VerceRegistry(object):
             raise NotAuthorisedException()
         if response.status_code != requests.codes.ok:
             raise RegistrationFailed()
+    
+    def listWorkspaces(self):
+        url = self.registry_url + 'workspace'
+        response = requests.get(url, headers=getHeaders(self.token))
+        if response.status_code == requests.codes.forbidden:
+            raise NotAuthorisedException()
+        if response.status_code != requests.codes.ok:
+            raise RegistrationFailed()
+        return response
 
 ##############################################################################
 # Utility and static methods: 

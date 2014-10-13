@@ -27,16 +27,20 @@ from dispel4py.registry import utils
 from dispel4py.registry import core
 
 DISPEL4PY_CONFIG_DIR = os.path.expanduser('~/.dispel4py/')
+DISPEL4PY_CONFIG_DIR = os.path.expanduser('.dispel4py/')
 CACHE = DISPEL4PY_CONFIG_DIR + '.cache'
 CONFIG_NAME = 'config.json'
 
-def login(username, password=None):
+def login(username, password=None, conf=None):
     if username is None:
         username = raw_input('Username: ') 
     if password is None:
         password = getpass.getpass('Password: ')
+    if conf is None:
+        conf=configure()
+    workspace = conf['verce.registry']['workspace']
     try:
-        reg = core.initRegistry(username, password)
+        reg = core.initRegistry(username, password, url=os.environ['VERCEREGISTRY_HOST'] + '/rest/', workspace=workspace)
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
@@ -47,7 +51,7 @@ def login(username, password=None):
         pass
     with open(CACHE, 'w') as file:
         file.write('%s\n%s\n%s' % (username, enc, reg.token))
-    print 'Logged in.'
+    # print 'Logged in.'
     return reg
         
 def removeCache():
@@ -92,7 +96,7 @@ def _initRegistry(config, username=None, password=None):
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
-        
+    
     return reg
 
 def register(reg, name, attr, file=None):
@@ -118,6 +122,44 @@ def register(reg, name, attr, file=None):
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)        
 
+
+def workspace(reg):
+    ''' Choose a new default workspace '''
+    print 'Please select one of the following workspaces by providing the corresponding number. Enter 0 to exit.'
+    resp = None
+    try:
+        resp = reg.listWorkspaces()
+    except core.NotAuthorisedException:
+        sys.stderr.write("Not authorised.")
+        sys.exit(4)
+    except Exception as err:
+        sys.stderr.write("An error occurred:\n%s\n" % err)
+        sys.exit(-1)
+    count = 0
+    for i in resp.json():
+        print '(' + str(count + 1) + ') ' + i['name']
+        count += 1
+    choice = None
+    try:
+        choice = int(raw_input('Your selection: '))
+    except ValueError:
+        sys.stderr.write('Invalid selection. Please enter a valid number.\n')
+        sys.exit(1)
+    except:
+        sys.stderr.write('Unknown error occurred.\n')
+        sys.exit(2)
+    if choice == 0:
+        print 'Exiting...'
+        sys.exit(0)
+    if choice < 0 or choice > len(resp.json()):
+        sys.stderr.write('Invalid selection - out of bounds.\n')
+        sys.exit(3)
+    
+    wspc_id = resp.json()[choice-1]['id']
+    set_default_workspace(wspc_id)
+    print 'Default workspace changed to \'' + resp.json()[choice-1]['name'] + '\'' 
+    
+    
 def view(reg, name):
     '''
     Display the source for the Dispel4Py entity identified by 'name'
@@ -140,10 +182,11 @@ def list(reg, name=''):
     '''
     List the contents of the package with 'name'.
     '''
+    print 'Listing of Workspace:' + str(reg.workspace)
     try:
         pkgs = reg.listPackages(name)
     except core.UnknownPackageException as exc:
-        sys.stderr.write("Unknown package: '%s'\n" % exc)
+        sys.stderr.write("Unknown package prefix: '%s'\n" % exc)
         sys.exit(3)
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.")
@@ -259,6 +302,7 @@ def configure():
             CONFIG = os.path.abspath(configName)
         else:
             # or in the user home directory
+            CONFIG = os.path.abspath('%s%s' % (DISPEL4PY_CONFIG_DIR, CONFIG_NAME))
             CONFIG = os.path.abspath(DISPEL4PY_CONFIG_DIR + CONFIG_NAME)
     if not os.path.isfile(CONFIG):
         # create config
@@ -270,13 +314,30 @@ def configure():
             with open(CONFIG, 'r') as config_file:
                 conf = json.load(config_file)
         except:
+            # the file exists but it's invalid - remove it so that it gets recreated next time idispel4py is run
+            os.remove(configName)
             sys.stderr.write("No valid configuration found. Please ensure that the configuration is available at ~/%s or define $DISPEL4PY_CONFIG.\n" % configName)
-            sys.exit(1) 
-    return conf 
+            sys.exit(1)
+    return conf
+    
+    
+def set_default_workspace(wspc_id):
+    CONFIG = None 
+    if 'DISPEL4PY_CONFIG' in os.environ:
+        CONFIG = os.environ['DISPEL4PY_CONFIG'].encode('utf-8')
+    else:
+        CONFIG = './.dispel4py/' + CONFIG_NAME
+    conf = configure()
+    conf['verce.registry']['workspace'] = wspc_id
+
+    with open(CONFIG, 'w') as config_file:
+        config_file.write(json.dumps(conf))
+    print 'Updated ' + CONFIG
+
 
 def main():
     parser = argparse.ArgumentParser(description='View and register Dispel4Py objects in a registry.')
-    parser.add_argument('command', help='command to execute, one of: list, view, register')
+    parser.add_argument('command', help='command to execute, one of: list, view, register, workspace')
     parser.add_argument('args', nargs='*', help='command arguments')
     parser.add_argument('-u', '--username', help='username for registry access')
     parser.add_argument('-p', '--password', help='password')
@@ -292,7 +353,7 @@ def main():
         try:
             globals()[args.command](reg, *args.args)
         except KeyError:
-            sys.stderr.write("Unknown command: %s\n" % command)
+            sys.stderr.write("Unknown command: %s\n" % args.command)
             usage()
     
 if __name__ == '__main__':
