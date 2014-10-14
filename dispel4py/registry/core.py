@@ -142,7 +142,9 @@ class VerceRegistry(object):
         impl["workspace"] = self.workspace
         impl["code"] = code
         data = { 'implementation' : impl }
-        response = requests.put(self.registry_url + "implementation/%s" % impl_id, json.dumps(data))
+        url = self.registry_url + "implementation/%s" % impl_id
+        print '> Update URL: ' + url
+        response = requests.put(url, json.dumps(data))
         if response.status_code != requests.codes.ok:
             raise Exception("Implementation update failed")
         response_json = response.json()
@@ -399,11 +401,11 @@ def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSP
     reg.user = username
     if token:
         reg.token = token
-        # response = requests.get(url + 'workspace/%s' % workspace, headers=getHeaders(token))
-        # if response.status_code == requests.codes.forbidden:
-        #     raise NotAuthorisedException()
-        # else:
-        #     response.raise_for_status()
+        response = requests.get(url + 'dummy', headers=getHeaders(token))
+        if response.status_code == requests.codes.forbidden:
+            raise NotAuthorisedException()
+        else:
+            response.raise_for_status()
     else:
         reg.login(username, password)
     sys.meta_path.append(reg)

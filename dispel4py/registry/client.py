@@ -125,7 +125,7 @@ def register(reg, name, attr, file=None):
         sys.exit(4)
     except Exception as err:
         sys.stderr.write("An error occurred:\n%s\n" % err)
-        sys.exit(-1)        
+        sys.exit(-1)
 
 def __select_wspc(reg):
     ''' List all workspaces and allow the user to select one - return (workspace's id, name) '''
@@ -217,6 +217,10 @@ def __lst_pckgs(reg):
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
     
+    if wspc_json == []:
+        sys.stderr.write('Empty response received. The default workspace may not exist. Try switching to a valid workspace by calling "workspace" first.\n')
+        sys.exit(5)
+        
     for wi in wspc_json['workspaceItems']:
         p = wi['pckg']
         if not p.endswith('__gendef') and not p.endswith('__impl'):
@@ -255,6 +259,11 @@ def list(reg, name=''):
         print traceback.format_exc()
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
+        
+    if pkgs == []:
+        sys.stderr.write('Empty response received. The default workspace may not exist. Try switching to a valid workspace by calling "workspace" first.\n')
+        sys.exit(5)
+        
     if pkgs: sys.stdout.write("Packages:\n")
     for pkg in pkgs:
         # ignore internal packages __gendef and __impl
@@ -300,7 +309,7 @@ def updateCode(reg, name, code):
 def update(reg, name, file):
     with open(file, "r") as src:
         code = src.read()
-    updateCode(name, code)
+    updateCode(reg, name, code)
 
 def edit(reg, name):
     '''
@@ -323,9 +332,11 @@ def edit(reg, name):
         if source is None:
             register(name, temp_path)
         else:
-            update(name, temp_path)
+            update(reg, name, temp_path)
     except Exception as err:
         if temp_path: os.remove(temp_path)
+        import traceback
+        traceback.print_exc()
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
 
@@ -347,7 +358,7 @@ def getEditor():
         pass
     try:
         def_editor = config['default.editor']
-    except KeyError:
+    except:
         pass
     return def_editor
 
