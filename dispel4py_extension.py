@@ -22,11 +22,19 @@ import sys
 import os
 import  tempfile
 import traceback
+<<<<<<< HEAD
 import random
 
 from IPython.html.widgets import interact, interactive, fixed
 from IPython.html import widgets
 from IPython.display import display
+=======
+#from __future__ import print_function
+from IPython.html.widgets import interact, interactive, fixed
+from IPython.html import widgets
+from IPython.display import display
+import sys 
+>>>>>>> b86e930394b292ccf5c085b5669f83bf59db1372
 
 def _initRegistry():
     client.config = client.configure()
@@ -64,6 +72,7 @@ def _edit(name):
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
 
+<<<<<<< HEAD
 def _init_reg_widgets():
     txName = widgets.TextWidget(description='Name: ', value='')
     txName2 = widgets.TextWidget(description='', value='')
@@ -78,6 +87,22 @@ def _make_temp_file(suffix, code):
     f.write(code)
     f.close()
     return fname
+=======
+# XXX : appears to be necessary evil ... need to think of a workaround
+# name_to_update = None
+# code_to_update = None
+# reg_for_update = None
+# def _update(b):
+#     try:
+#         if name_to_update != None and code_to_update != None and reg_for_update != None:
+#             reg.update_code(name_to_update, code_to_update)
+#         name_to_update = code_to_update = reg_for_update = None
+#     except Exception as err:
+#         import traceback
+#         traceback.print_exc()
+#         sys.stderr.write("An error occurred:\n%s\n" % err)
+#         sys.exit(-1)
+>>>>>>> b86e930394b292ccf5c085b5669f83bf59db1372
 
 from IPython.core.magic import (Magics, magics_class, line_magic)
     
@@ -92,6 +117,7 @@ class Dispel4PyMagics(Magics):
     code_to_update = None
     reg_for_update = None
     textarea_for_update = None
+<<<<<<< HEAD
     
     txNameSavePE = None
     txClassNameSavePE = None
@@ -105,6 +131,8 @@ class Dispel4PyMagics(Magics):
     btSaveSaveFn = None
     regRegFn = None
     
+=======
+>>>>>>> b86e930394b292ccf5c085b5669f83bf59db1372
     def _update(self, b):
         try: 
             if not self.textarea_for_update is None and not self.textarea_for_update.value is None and not self.name_to_update is None and not self.code_to_update is None and not self.reg_for_update is None:
@@ -115,6 +143,7 @@ class Dispel4PyMagics(Magics):
             import traceback
             traceback.print_exc()
             sys.stderr.write("An error occurred:\n%s\n" % err)
+<<<<<<< HEAD
     
     
     def _register_pe(self, b):
@@ -145,6 +174,9 @@ class Dispel4PyMagics(Magics):
             traceback.print_exc()
             sys.stderr.write("An error occurred:\n%s\n" % err)
                 
+=======
+        
+>>>>>>> b86e930394b292ccf5c085b5669f83bf59db1372
     @line_magic
     def dispel4py(self, line):
         command = line.split()
@@ -160,6 +192,7 @@ class Dispel4PyMagics(Magics):
             self.code_to_update = w.value
             b.on_click(self._update)
         elif command[0] == 'register_pe':
+<<<<<<< HEAD
             self.regRegPe = _initRegistry()
             self.txNameSavePE, self.txClassNameSavePE, self.txCodeSavePE, self.btSaveSavePE = _init_reg_widgets()
             display(self.txNameSavePE)
@@ -177,6 +210,11 @@ class Dispel4PyMagics(Magics):
             display(self.txCodeSaveFn)
             display(self.btSaveSaveFn)
             self.btSaveSaveFn.on_click(self._register_fn)
+=======
+            pass
+        elif command[0] == 'register_fn':
+            pass
+>>>>>>> b86e930394b292ccf5c085b5669f83bf59db1372
         elif command[0] == 'list' and len(command) == 1:
             reg = _initRegistry()
             client.list(reg)        
