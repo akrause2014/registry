@@ -66,8 +66,10 @@ def removeCache():
         pass
     print 'Cleared login cache.'
         
-def _initRegistry(config, username=None, password=None):
+def _initRegistry(config=None, username=None, password=None):
     token = None
+    if (config==None):
+        config = configure()
     if not username:
         try:
             with open(CACHE, 'r') as file:
@@ -182,7 +184,7 @@ def workspace(reg):
     print 'Please select one of the following workspaces by providing the corresponding number. Enter 0 to exit.'
     wspc_id, wspc_name = __select_wspc(reg)
     set_default_workspace(wspc_id)
-    print 'Default workspace changed to \'' + wspc_name + '\'' 
+    print 'Active workspace changed to \'' + wspc_name + '\'' 
     
     
 def view(reg, name):

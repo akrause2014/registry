@@ -143,8 +143,7 @@ class VerceRegistry(object):
         impl["code"] = code
         data = { 'implementation' : impl }
         url = self.registry_url + "implementation/%s" % impl_id
-        print '> Update URL: ' + url
-        response = requests.put(url, json.dumps(data))
+        response = requests.put(url, headers=getHeaders(self.token), data=json.dumps(data))
         if response.status_code != requests.codes.ok:
             raise Exception("Implementation update failed")
         response_json = response.json()
@@ -152,7 +151,7 @@ class VerceRegistry(object):
             print "Error: %s" % response_json["errors"]
             raise Exception("Implementation update failed")
         return response_json["id"]
-                
+
     def getImplementationId(self, fullname):
         pkg, simpleName = split_name(fullname)
         url = self.registry_url + "workspace/%s/%s/%s?deep=true" % (self.workspace, pkg, simpleName)
