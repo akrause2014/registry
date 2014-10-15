@@ -143,8 +143,7 @@ class VerceRegistry(object):
         impl["code"] = code
         data = { 'implementation' : impl }
         url = self.registry_url + "implementation/%s" % impl_id
-        print '> Update URL: ' + url
-        response = requests.put(url, json.dumps(data))
+        response = requests.put(url, headers=getHeaders(self.token), data=json.dumps(data))
         if response.status_code != requests.codes.ok:
             raise Exception("Implementation update failed")
         response_json = response.json()
@@ -152,7 +151,7 @@ class VerceRegistry(object):
             print "Error: %s" % response_json["errors"]
             raise Exception("Implementation update failed")
         return response_json["id"]
-                
+
     def getImplementationId(self, fullname):
         pkg, simpleName = split_name(fullname)
         url = self.registry_url + "workspace/%s/%s/%s?deep=true" % (self.workspace, pkg, simpleName)
@@ -233,9 +232,9 @@ class VerceRegistry(object):
         data = {}
         data["function"] = function
         
-        print "Registering function " + simpleName + " in " + pkg
+        # print "Registering function " + simpleName + " in " + pkg
         genDefId = self.register_gendef(pkg, simpleName)
-        print "Registered generic definition: id = %s" % genDefId
+        # print "Registered generic definition: id = %s" % genDefId
         
         # register function signature
         function["genericDefId"] = genDefId
@@ -247,9 +246,9 @@ class VerceRegistry(object):
                 requests.delete(self.registry_url + "gendef/%s" % genDefId)
                 raise RegistrationFailed, "Registration of function signature failed", sys.exc_info()[2]
             functionId = response.json()["id"]
-            print "Registered function signature: id = %s" % functionId
+            # print "Registered function signature: id = %s" % functionId
             implId = self.register_implementation(functionId, pkg, simpleName, path)
-            print "Registered implementation:     id = %s" % implId
+            # print "Registered implementation:     id = %s" % implId
         except:
             requests.delete(self.registry_url + "gendef/%s" % genDefId)
             raise
@@ -289,9 +288,9 @@ class VerceRegistry(object):
         data["pesig"] = peSig
         
         # Register generic signature
-        print "Registering PE " + simpleName + " in " + pkg
+        # print "Registering PE " + simpleName + " in " + pkg
         genDefId = self.register_gendef(pkg, simpleName)
-        print "Registered generic definition: id = %s" % genDefId
+        # print "Registered generic definition: id = %s" % genDefId
         try:
             # Register PE signature
             peSig["genericDefId"] = genDefId
@@ -302,10 +301,10 @@ class VerceRegistry(object):
                 requests.delete(self.registry_url + "gendef/%s" % genDefId)
                 raise RegistrationFailed, "Registration of PE signature failed", sys.exc_info()[2]
             peId = response.json()["id"]
-            print "Registered PE signature:   id = %s" % peId
+            # print "Registered PE signature:   id = %s" % peId
             # Register implementation
             implId = self.register_implementation(peId, pkg, simpleName, path)
-            print "Registered implementation:     id = %s" % implId
+            # print "Registered implementation:     id = %s" % implId
         except:
             # delete everything that was registered if anything went wrong
             requests.delete(self.registry_url + "gendef/%s" % genDefId)
